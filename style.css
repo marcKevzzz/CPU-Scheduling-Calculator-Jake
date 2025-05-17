@@ -1,0 +1,117 @@
+.gantt-box {
+  min-height: 40px;
+}
+
+.h-mo {
+  height: 50%;
+}
+
+.timeline-line {
+  height: 2px;
+  background-color: white;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.slashed {
+  position: relative;
+  display: inline-block;
+}
+.slashed::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -5%;
+  height: 2px;
+  width: 30%;
+  background: rgba(0, 0, 0, 0.753);
+  transform: rotate(25deg);
+}
+
+.left {
+  margin-left: -40px;
+}
+
+#ganttChart {
+  overflow-x: auto;
+  max-width: 100%;
+  width: fit-content;
+}
+
+#timeline {
+  white-space: nowrap;
+  align-items: flex-end;
+  position: relative;
+  width: fit-content;
+}
+
+.responsive-container {
+  overflow-x: auto;
+}
+
+/* Prevent children from wrapping */
+.timeline,
+.cpu-table {
+  white-space: nowrap;
+  min-width: max-content;
+}
+
+/* Styling for Gantt chart bars */
+.gantt-bar {
+  display: inline-block;
+  padding: 10px 20px;
+  margin-right: 4px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+}
+
+.timeline-block {
+  border-radius: 4px;
+  border: none;
+  position: relative;
+}
+
+.timeline-vrline {
+  width: calc(100% - 70px);
+  border-top: 2px solid #000000;
+  position: absolute;
+  top: 48%;
+  left: 35px;
+}
+
+.line {
+  width: 0;
+  border-left: 1px solid #000000;
+  height: 100%;
+}
+
+.hide {
+  display: none;
+}
+
+.dropdown-arrow {
+  width: 2px;
+  height: 20px;
+  background-color: #000000;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.main section {
+  min-height: 40vh;
+}
+
+.prioritys {
+  display: none;
+}
+
+.timeQuantum {
+  display: none;
+}

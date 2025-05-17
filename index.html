@@ -1,0 +1,567 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <title>CPU Scheduling Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap");
+      .font-cpu {
+        font-family: "MedievalSharp", cursive;
+        font-weight: bolder;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      @media screen and (width < 37.5em) {
+        .hiden {
+          display: none;
+        }
+        main {
+          padding-right: 0;
+          width: 100%;
+        }
+        header {
+          padding-right: 0;
+        }
+
+        tr {
+          display: flex;
+          width: 100%;
+        }
+        tr td:first-of-type {
+          width: 6em;
+        }
+        tr td:last-of-type {
+          flex-grow: 1;
+        }
+      }
+      tr {
+        width: 100%;
+      }
+      tr td:first-of-type {
+        width: 6em;
+      }
+
+      @media screen and (width < 23.5em) {
+        .oo {
+          display: none;
+        }
+        .responsive-container {
+          max-width: 326px;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body class="py-4 px-2 bg-[#ede7e2] w-full">
+    <!-- Toast -->
+    <div
+      id="toast-danger"
+      class="hidden flex items-center w-full max-w-xs px-2 p-1 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800 fixed sm:top-[4rem] top-[3rem] right-[1rem] z-50 transition-opacity duration-300 opacity-0"
+      role="alert"
+    >
+      <div
+        class="inline-flex items-center justify-center shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200"
+        id="no"
+      >
+        <svg
+          class="w-5 h-5"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM10 15a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1-4a1 1 0 0 1-2 0V6a1 1 0 0 1 2 0v5Z"
+          />
+        </svg>
+        <span class="sr-only">Warning icon</span>
+      </div>
+      <div
+        class="hide inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200"
+        id="success"
+      >
+        <svg
+          class="w-5 h-5"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"
+          />
+        </svg>
+        <span class="sr-only">Check icon</span>
+      </div>
+      <div class="ms-3 text-[14px] font-normal" id="toastLbl"></div>
+      <button
+        id="hideToast"
+        class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+        aria-label="Close"
+      >
+        <svg
+          class="w-3 h-3"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 14 14"
+        >
+          <path
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Header -->
+    <header
+      class="flex items-center space-x-2 mb-8 px-1 max-w-[560px] mx-auto pe-[4rem]"
+    >
+      <h1 class="font-cpu text-5xl leading-none select-none oo">CPU</h1>
+      <p class="text-xl font-semibold font-sans select-none text-center grow">
+        SCHEDULING CALCULATOR
+      </p>
+      <div
+        class="text-6xl select-none oo"
+        style="font-family: 'MedievalSharp', cursive"
+      >
+        !
+      </div>
+    </header>
+    <div class="flex max-w-screen-xl w-[fit-content] mx-auto">
+      <!-- Scrollspy Navigation -->
+      <aside class="pr-4 sticky top-4 h-full hiden">
+        <nav class="space-y-2 text-sm font-sans border-r pr-2">
+          <a
+            href="#section-algo"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >Algorithm
+          </a>
+          <a
+            href="#section-inputs"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >Input
+          </a>
+          <a
+            href="#section-timeline"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >Timeline</a
+          >
+          <a
+            href="#section-ganttchart"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >Ganttchart</a
+          >
+          <a
+            href="#section-turnaround"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >Turn-around Time</a
+          >
+          <a
+            href="#section-waiting"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >Waiting Time</a
+          >
+          <a
+            href="#section-util"
+            class="scroll-link block px-3 py-1 rounded hover:border-black border border-1 border-[#ede7e2] transition"
+            >CPU Util</a
+          >
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="max-w-lg sm:pe-[4em]">
+        <!-- Pick type label -->
+        <section id="section-algo">
+          <div class="mb-4 px-1">
+            <div
+              class="bg-[#b7b7b7] text-center text-black font-bold text-lg font-sans rounded-md px-8 py-2 shadow-[3px_3px_0_0_rgba(0,0,0,0.3)] select-none flex-shrink-0"
+            >
+              CHOOSE AN ALGORITHM TO EXECUTE
+            </div>
+          </div>
+
+          <ul
+            id="algorithm-list"
+            class="space-y-1 mb-10 text-base font-sans select-none px-1 mx-auto text-sm"
+          >
+            <li
+              data-value="SRTF"
+              class="algorithm-item flex items-center justify-between border border-gray-400 rounded-md px-4 py-1 hover:bg-gray-200 cursor-pointer hover:border-black transition"
+            >
+              <span>SHORTEST REMAINING TIME FIRST</span>
+              <button
+                class="select-btn border border-black w-8 h-8 flex items-center justify-center select-none rounded-md hover:bg-gray-200 transition"
+                type="button"
+              >
+                <i class="fas fa-arrow-left text-gray-700"></i>
+              </button>
+            </li>
+
+            <li
+              data-value="SJF"
+              class="algorithm-item flex items-center justify-between border border-gray-400 rounded-md px-4 py-1 hover:bg-gray-200 cursor-pointer hover:border-black transition"
+            >
+              <span>SHORTEST JOB FIRST</span>
+              <button
+                class="select-btn border border-black w-8 h-8 flex items-center justify-center select-none rounded-md hover:bg-gray-200 transition"
+                type="button"
+              >
+                <i class="fas fa-arrow-left text-gray-700"></i>
+              </button>
+            </li>
+            <li
+              data-value="PP"
+              class="algorithm-item flex items-center justify-between border border-gray-400 rounded-md px-4 py-1 hover:bg-gray-200 cursor-pointer hover:border-black transition"
+            >
+              <span>PREEMPTIVE PRIORITY</span>
+              <button
+                class="select-btn border border-black w-8 h-8 flex items-center justify-center select-none rounded-md hover:bg-gray-200 transition"
+                type="button"
+              >
+                <i class="fas fa-arrow-left text-gray-700"></i>
+              </button>
+            </li>
+            <li
+              data-value="NPP"
+              class="algorithm-item flex items-center justify-between border border-gray-400 rounded-md px-4 py-1 hover:bg-gray-200 cursor-pointer hover:border-black transition"
+            >
+              <span>NON PREEMPTIVE PRIORITY</span>
+              <button
+                class="select-btn border border-black w-8 h-8 flex items-center justify-center select-none rounded-md hover:bg-gray-200 transition"
+                type="button"
+              >
+                <i class="fas fa-arrow-left text-gray-700"></i>
+              </button>
+            </li>
+            <li
+              data-value="SRTF"
+              class="algorithm-item flex items-center justify-between border border-gray-400 rounded-md px-4 py-1 hover:bg-gray-200 cursor-pointer hover:border-black transition"
+            >
+              <span>SHORTEST REMAINING TIME FIRST</span>
+              <button
+                class="select-btn border border-black w-8 h-8 flex items-center justify-center select-none rounded-md hover:bg-gray-200 transition"
+                type="button"
+              >
+                <i class="fas fa-arrow-left text-gray-700"></i>
+              </button>
+            </li>
+            <li
+              data-value="RR"
+              class="algorithm-item flex items-center justify-between border border-gray-400 rounded-md px-4 py-1 hover:bg-gray-200 cursor-pointer hover:border-black transition"
+            >
+              <span>ROUND ROBIN</span>
+              <button
+                class="select-btn border border-black w-8 h-8 flex items-center justify-center select-none rounded-md hover:bg-gray-200 transition"
+                type="button"
+              >
+                <i class="fas fa-arrow-left text-gray-700"></i>
+              </button>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Input Fields -->
+        <section id="section-inputs">
+          <div id="input-list" class="space-y-2">
+            <div class="flex flex-col">
+              <label class="text-sm mb-2" for="arrivalTime"
+                >INPUT FOR ARRIVAL TIME (AT)</label
+              >
+              <input
+                class="border border-gray-400 rounded-md py-2 px-3 text-base outline-none input-box"
+                id="arrivalTime"
+                name="arrivalTime"
+                placeholder="e.g. 0 1 2"
+                type="text"
+                list="arrivalTimeSuggestions"
+              />
+              <datalist id="arrivalTimeSuggestions">
+                <option value="0, 1, 2, 3, 4"></option>
+                <option value="0, 3, 2, 5"></option>
+                <option value="1, 2, 3, 4, 5"></option>
+              </datalist>
+            </div>
+            <div class="flex flex-col">
+              <label class="text-sm mb-2" for="burstTime"
+                >INPUT FOR BURST TIME (BT)</label
+              >
+              <input
+                class="border border-gray-400 rounded-md py-2 px-3 text-base outline-none input-box"
+                id="burstTime"
+                name="burstTime"
+                placeholder="e.g. 5 3 2"
+                type="text"
+                list="burstTimeSuggestions"
+              />
+              <datalist id="burstTimeSuggestions">
+                <option value="2, 5, 2, 9, 3"></option>
+                <option value="10, 5, 8, 7"></option>
+                <option value="4, 6, 3, 2"></option>
+              </datalist>
+            </div>
+            <div class="flex flex-col prioritys">
+              <label class="text-sm mb-2" for="priority"
+                >INPUT FOR PRIORITY (P)</label
+              >
+              <input
+                class="border border-gray-400 rounded-md py-2 px-3 text-base outline-none extraInput"
+                id="prioritys"
+                name="priority"
+                placeholder="e.g. 2 1 3"
+                type="text"
+                list="priorityTimeSuggestions"
+              />
+              <datalist id="priorityTimeSuggestions">
+                <option value="1, 2, 3, 4, 5"></option>
+                <option value="3, 1, 2, 4"></option>
+                <option value="5, 3, 1, 2"></option>
+              </datalist>
+            </div>
+            <div class="flex flex-col timeQuantum">
+              <label class="text-sm mb-2" for="timeQuantumm"
+                >INPUT FOR TIME QUANTUM (TQ)</label
+              >
+              <input
+                class="border border-gray-400 rounded-md py-2 px-3 text-base outline-none input-box"
+                id="timeQuantum"
+                name="timeQuantumm"
+                placeholder="e.g. 2"
+                type="text"
+              />
+            </div>
+          </div>
+          <div class="flex justify-center gap-4 mt-6">
+            <button
+              class="bg-[#8b3a3a] text-white text-xs font-sans rounded-sm px-6 py-2 shadow-md hover:bg-[#a04a4a] transition"
+              type="button"
+              id="calculate"
+            >
+              CALCULATE
+            </button>
+            <button
+              class="bg-purple-900 text-white text-xs font-sans rounded-sm px-6 py-2 shadow-md hover:bg-purple-800 transition"
+              type="button"
+              id="clear"
+            >
+              CLEAR
+            </button>
+          </div>
+        </section>
+
+        <!-- Output -->
+        <div id="div-output" class="mt-[2rem]">
+          <h1 class="text-2xl font-bold py-4 h-mo" id="h-mo">OUTPUT:</h1>
+
+          <div class="main flex flex-col gap-[2em] hide">
+            <section class="timeline" id="section-timeline">
+              <div
+                class="bg-[#b7b7b7] text-center text-black font-semibold text-md font-sans rounded-md px-8 py-2 shadow-[3px_3px_0_0_rgba(0,0,0,0.3)] select-none flex-shrink-0"
+              >
+                TIMELINE
+              </div>
+              <div class="responsive-container">
+                <div
+                  id="timeline"
+                  class="flex flex-row mt-2 w-[fit-content]"
+                ></div>
+              </div>
+            </section>
+
+            <section class="ganttchart" id="section-ganttchart">
+              <div
+                class="bg-[#b7b7b7] text-center text-black font-semibold text-md font-sans rounded-md px-8 py-2 shadow-[3px_3px_0_0_rgba(0,0,0,0.3)] select-none flex-shrink-0"
+              >
+                GANTT CHART
+              </div>
+              <div class="responsive-container">
+                <div id="ganttChart" class="mt-2 p-2 ps-4 w-[fit-content]">
+                  <div id="head" class="flex flex-row"></div>
+                  <div id="gbody" class="flex flex-row"></div>
+                  <div id="tail" class="flex flex-row"></div>
+                  <div id="queue" class="flex flex-row"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="turnaround" id="section-turnaround">
+              <div
+                class="bg-[#b7b7b7] text-center text-black font-semibold text-md font-sans rounded-md px-8 py-2 shadow-[3px_3px_0_0_rgba(0,0,0,0.3)] select-none flex-shrink-0"
+              >
+                TURN-AROUND TIME
+              </div>
+              <div class="responsive-container mt-[2rem]">
+                <table
+                  class="table border-dark w-[fit-content]"
+                  id="resultTable"
+                >
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="waiting" id="section-waiting">
+              <div
+                class="bg-[#b7b7b7] text-center text-black font-semibold text-md font-sans rounded-md px-8 py-2 shadow-[3px_3px_0_0_rgba(0,0,0,0.3)] select-none flex-shrink-0"
+              >
+                WAITING TIME
+              </div>
+              <div class="responsive-container mt-[2rem]">
+                <table
+                  class="table border-dark p-2 w-[fit-content]"
+                  id="resultTableWaitingTime"
+                >
+                  <tbody></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="util" id="section-util">
+              <div
+                class="bg-[#b7b7b7] text-center text-black font-semibold text-md font-sans rounded-md px-8 py-2 shadow-[3px_3px_0_0_rgba(0,0,0,0.3)] select-none flex-shrink-0"
+              >
+                % OF CPU UTILIZATION
+              </div>
+              <div class="responsive-container mt-[2rem]">
+                <div
+                  class="text-center flex sm:flex-row flex-col gap-4 sm:gap-0 items-center justify-center mt-2 w-[max-content]"
+                  id="cpuResult"
+                >
+                  <div class="flex flex-row items-center">
+                    <span>= </span>
+
+                    <div
+                      class="w-[fit-content] flex flex-col items-center justify-center"
+                    >
+                      <span class="inline-block pb-1" id="process"> </span>
+                      <span
+                        class="inline-block pt-2 ml-1 mr-1 border-t border-black tracking-tight"
+                        id="completion"
+                      >
+                      </span>
+                    </div>
+
+                    <div class="flex flex-row items-center">
+                      <span class="ml-2 mr-2"> = </span>
+                      <div
+                        class="w-[fit-content] flex flex-col items-center justify-center"
+                      >
+                        <span
+                          class="inline-block border-b border-black pb-1 tracking-tighter"
+                          id="adds"
+                        >
+                        </span>
+                        <span class="inline-block pt-1" id="burstt"> </span>
+                      </div>
+                      <span class="ml-2 mr-2"> × 100 = </span>
+                      <span
+                        class="inline-block border-2 border-black rounded-md bg-white px-3 py-1 hide"
+                        id="cpuTotal"
+                      >
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- JavaScript to Highlight Active Algorithm -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const sections = document.querySelectorAll("section[id]");
+        const navLinks = document.querySelectorAll(".scroll-link");
+
+        function onScroll() {
+          let scrollPos = window.scrollY + 170; // Offset to trigger earlier
+          const bottomReached =
+            window.innerHeight + window.scrollY >=
+            document.body.scrollHeight - 1;
+
+          const meron = document.querySelector(".h-mo");
+          let lastSection = sections[sections.length - 1];
+          if (meron) {
+            lastSection = sections[sections.length - 6]; 
+          } else {
+            lastSection = sections[sections.length - 1]; 
+          }
+          // If user is at the bottom, highlight the last section
+          if (bottomReached ) {
+            navLinks.forEach((link) => {
+              link.classList.remove("text-black", "border-black");
+              link.classList.add("text-gray-500");
+
+              if (link.getAttribute("href") === `#${lastSection.id}`) {
+                link.classList.add("text-black", "border-black");
+                link.classList.remove("text-gray-500");
+              }
+            });
+            return;
+          }
+
+          // Otherwise, highlight based on scroll position
+          sections.forEach((section) => {
+            const top = section.offsetTop;
+            const height = section.offsetHeight;
+
+            if (scrollPos >= top && scrollPos < top + height) {
+              navLinks.forEach((link) => {
+                link.classList.remove("text-black", "border-black");
+                link.classList.add("text-gray-500");
+
+                if (link.getAttribute("href") === `#${section.id}`) {
+                  link.classList.add("text-black", "border-black");
+                  link.classList.remove("text-gray-500");
+                }
+              });
+            }
+          });
+        }
+
+        let scrollTimeout;
+        window.addEventListener("scroll", () => {
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(onScroll, 10);
+        });
+      });
+
+      const items = document.querySelectorAll(".algorithm-item");
+
+      items.forEach((item) => {
+        item.addEventListener("click", () => {
+          // Remove styles from all items
+          items.forEach((i) => {
+            i.classList.remove("bg-gray-200", "border-black");
+            i.classList.add("border-gray-400"); // Restore default border
+          });
+
+          // Add active styles to the clicked item
+          item.classList.remove("border-gray-400");
+          item.classList.add("bg-gray-200", "border-black");
+
+          // Log the selected algorithm value
+          const selectedValue = item.dataset.value?.trim();
+          console.log("Selected algorithm:", selectedValue);
+        });
+      });
+    </script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
