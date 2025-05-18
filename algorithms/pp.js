@@ -37,13 +37,14 @@ export function calculatePP(processes) {
           end: nextArrival,
           queue: [],
           arrived: remaining
-            .filter((p) => p.arrival === nextArrival)
+            .filter((p) => p.arrival <= nextArrival && p.remaining > 0)
             .map((p) => ({
               process: p.process,
               priority: p.priority,
               arrival: p.arrival,
               rbt: p.remaining,
             })),
+
           rbt: null,
         });
 
@@ -65,12 +66,7 @@ export function calculatePP(processes) {
     const end = currentTime;
 
     const queueSnapshot = remaining
-      .filter(
-        (p) =>
-          p.arrival <= currentTime &&
-          p.remaining > 0 &&
-          p.process !== current.process
-      )
+      .filter((p) => p.arrival <= currentTime && p.remaining > 0)
       .sort((a, b) => a.arrival - b.arrival)
       .map((p) => ({
         process: p.process,

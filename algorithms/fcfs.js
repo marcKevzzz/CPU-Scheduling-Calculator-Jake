@@ -2,59 +2,66 @@ export function calculateFCFS(processes) {
   const n = processes.length;
   const completed = [];
   const readyQueue = [];
-  const remaining = [...processes]; // Don't mutate the original array
+  const remaining = [...processes]; // Avoid mutating original input
   const addedToQueue = new Set(); // Track added process IDs
   let currentTime = 0;
   let totalIdle = 0;
   const ganttChart = [];
+
   while (completed.length < n) {
-    // Add processes that have arrived and are not in queue
+    // Add newly arrived processes to the ready queue
     remaining.forEach((p) => {
       if (p.arrival <= currentTime && !addedToQueue.has(p.process)) {
         readyQueue.push(p);
         addedToQueue.add(p.process);
       }
     });
+
     if (readyQueue.length === 0) {
-      // Jump to next arrival and log idle time per unit
+      // If no processes are ready, find the next arrival time
       const nextArrival = remaining
         .filter((p) => !completed.some((c) => c.process === p.process))
         .sort((a, b) => a.arrival - b.arrival)[0]?.arrival;
+
       if (nextArrival !== undefined && nextArrival > currentTime) {
+        const staticQueue = remaining
+          .filter(
+            (proc) =>
+              proc.arrival <= currentTime &&
+              !completed.some((c) => c.process === proc.process)
+          )
+          .sort((a, b) => a.arrival - b.arrival)
+          .map((proc) => proc.process);
+
         for (let t = currentTime; t < nextArrival; t++) {
-          // Calculate the queue during idle time
-          const queueDuringIdle = remaining
-            .filter(
-              (proc) =>
-                proc.arrival <= t &&
-                !completed.some((c) => c.process === proc.process)
-            )
-            .sort((a, b) => a.arrival - b.arrival)
-            .map((proc) => proc.process);
-          // Detect arriving process exactly at the end of this idle unit
           const arrivalsAtEnd = remaining
             .filter((proc) => proc.arrival === t + 1)
             .map((proc) => proc.process);
+
           ganttChart.push({
             label: "i",
             start: t,
             end: t + 1,
-            queue: queueDuringIdle,
-            arrived: arrivalsAtEnd.length ? arrivalsAtEnd : null, // Process arriving at end of this idle time
+            queue: staticQueue,
+            arrived: arrivalsAtEnd.length ? arrivalsAtEnd : null,
           });
+
           totalIdle++;
         }
+
         currentTime = nextArrival;
       } else {
-        break;
+        break; // No more processes to process
       }
     } else {
+      readyQueue.sort((a, b) => a.arrival - b.arrival);
       const p = readyQueue.shift();
       const start = Math.max(currentTime, p.arrival);
       const end = start + p.burst;
       const turnaround = end - p.arrival;
       const waiting = turnaround - p.burst;
-      // Get all other ready processes during execution, sorted by arrival time
+      const response = start - p.arrival;
+
       const queueDuringExecution = remaining
         .filter(
           (proc) =>
@@ -64,13 +71,16 @@ export function calculateFCFS(processes) {
         )
         .sort((a, b) => a.arrival - b.arrival)
         .map((proc) => proc.process);
+
       ganttChart.push({
         label: `${p.process}`,
         start,
         end,
         queue: queueDuringExecution,
       });
+
       currentTime = end;
+
       completed.push({
         ...p,
         start,
@@ -78,9 +88,18 @@ export function calculateFCFS(processes) {
         completion: end,
         turnaround,
         waiting,
+        response,
       });
     }
   }
-  return { result: completed, totalTime: currentTime, totalIdle, ganttChart };
-  console.table(processes);
+
+  // Optional: print original processes (debugging)
+  // console.table(processes);
+
+  return {
+    result: completed,
+    totalTime: currentTime,
+    totalIdle,
+    ganttChart,
+  };
 }

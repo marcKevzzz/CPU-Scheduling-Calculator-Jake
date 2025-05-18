@@ -24,7 +24,8 @@ export function calculateSRTF(processes) {
 
     if (readyQueue.length === 0) {
       const arrivedDuringIdle = remaining
-        .filter((p) => p.arrival === currentTime + 1)
+        .filter((p) => p.arrival <= currentTime + 1 && p.remaining > 0)
+
         .map((p) => ({
           process: p.process,
           priority: p.priority || null,
@@ -59,12 +60,8 @@ export function calculateSRTF(processes) {
     const end = currentTime;
 
     const queueSnapshot = remaining
-      .filter(
-        (p) =>
-          p.arrival <= currentTime &&
-          p.remaining > 0 &&
-          p.process !== currentProc.process
-      )
+      .filter((p) => p.arrival <= currentTime && p.remaining > 0)
+
       .sort((a, b) => a.arrival - b.arrival)
       .map((p) => ({
         process: p.process,

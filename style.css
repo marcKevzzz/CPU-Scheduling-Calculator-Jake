@@ -27,7 +27,7 @@ input::-webkit-inner-spin-button {
   top: 50%;
   left: -5%;
   height: 2px;
-  width: 30%;
+  width: 50%;
   background: rgba(0, 0, 0, 0.753);
   transform: rotate(25deg);
 }
@@ -51,6 +51,9 @@ input::-webkit-inner-spin-button {
 
 .responsive-container {
   overflow-x: auto;
+  max-width: 430px;
+  width: 100%;
+  padding-block: 1em;
 }
 
 /* Prevent children from wrapping */
@@ -114,4 +117,14 @@ input::-webkit-inner-spin-button {
 
 .timeQuantum {
   display: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0.3em;
+  height: 0.3em;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #bebebd;
+  border-radius: 20px;
 }

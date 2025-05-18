@@ -19,26 +19,28 @@ export function calculateRR(processes, quantum) {
   remaining.sort((a, b) => a.arrival - b.arrival);
 
   while (completed.length < n) {
-    // Add to queue any arriving processes at current time
+    // Add processes that arrive at currentTime
     while (i < n && remaining[i].arrival <= currentTime) {
       queue.push(remaining[i]);
       i++;
     }
 
-    // 1️⃣ CPU is idle
     if (queue.length === 0) {
+      // Idle time handling
       currentTime++;
 
-      const arrived = [];
-      // Check if any process arrives exactly now
       while (i < n && remaining[i].arrival <= currentTime) {
         queue.push(remaining[i]);
-        arrived.push({
-          process: remaining[i].process,
-          priority: remaining[i].priority || null,
-        });
         i++;
       }
+
+      const arrived = remaining
+        .filter((p) => p.arrival <= currentTime && p.remaining > 0)
+        .map((p) => ({
+          process: p.process,
+          priority: p.priority || null,
+          rbt: p.remaining,
+        }));
 
       ganttChart.push({
         label: "i",
@@ -55,14 +57,7 @@ export function calculateRR(processes, quantum) {
     }
 
     const current = queue.shift();
-
-    // 2️⃣ Check if all have arrived
-    const allArrived = i >= n;
-
-    // Use quantum or full remaining burst if no more future arrivals
-    const executionTime = allArrived
-      ? current.remaining
-      : Math.min(current.remaining, quantum);
+    const executionTime = Math.min(current.remaining, quantum); // ✅ always respect time quantum
 
     const sliceStart = currentTime;
     const sliceEnd = sliceStart + executionTime;
@@ -70,34 +65,47 @@ export function calculateRR(processes, quantum) {
 
     if (current.start === null) current.start = currentTime;
 
-    // Clone queue state before execution (for ganttChart)
-    // Only store process names and priority, without sorting
-    const queueBefore = queue.map((p) => ({
-      process: p.process,
-      priority: p.priority || null,
-    }));
-
-    // Execute the process for the time slice
+    // Simulate execution for each unit of the quantum
     for (let t = 0; t < executionTime; t++) {
       currentTime++;
 
-      // Handle new arrivals during execution (append at the end of queue)
       while (i < n && remaining[i].arrival <= currentTime) {
-        queue.push(remaining[i]);
-        arrivedDuring.push({
-          process: remaining[i].process,
-          priority: remaining[i].priority || null,
-        });
+        const arriving = remaining[i];
+        queue.push(arriving);
+        // Only add to arrivedDuring if the process is not already in the queue
+        if (!queue.some((p) => p.process === arriving.process)) {
+          arrivedDuring.push({
+            process: arriving.process,
+            priority: arriving.priority || null,
+            rbt: arriving.remaining,
+          });
+        }
         i++;
       }
     }
 
     current.remaining -= executionTime;
 
-    // Predict if process will return to queue
+    let queueBefore = queue.map((p) => ({
+      process: p.process,
+      priority: p.priority || null,
+      rbt: p.remaining,
+    }));
+
+    // Include the current process in the queue snapshot ONLY if it's not yet finished
     if (current.remaining > 0) {
-      // Append current process at the end of the queue
-      queue.push(current);
+      queueBefore = [
+        {
+          process: current.process,
+          priority: current.priority || null,
+          rbt: current.remaining,
+        },
+        ...queueBefore,
+      ];
+    }
+
+    if (current.remaining > 0) {
+      queue.push(current); // return to queue
     } else {
       current.end = currentTime;
       const turnaround = current.end - current.arrival;

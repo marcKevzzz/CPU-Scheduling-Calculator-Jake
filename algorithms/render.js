@@ -97,24 +97,7 @@ export function renderGanttChart(result, options = {}, ganttChart) {
     btLbl.innerHTML = "Bt";
     btHeader.appendChild(btLbl);
 
-    // Build burst map for each process
-    // const burstDurationsMap = {};
-    // ganttChart.forEach((entry, i) => {
-    //   if (entry.label !== "i") {
-    //     burstDurationsMap[entry.label] ??= 0;
-    //     burstDurationsMap[entry.label] += burst[i] - (entry.end - entry.start);
-    //   }
-    // });
-
-    const originalBurstMap = {};
-    result.forEach((proc) => {
-      originalBurstMap[proc.process ?? proc.label] = proc.burst;
-    });
-    const rbtMap = {};
-    const appearedProcesses = new Set();
-
     // Add RBt and Bt per Gantt chart entry
-
     ganttChart.forEach((entry) => {
       const rbtDiv = document.createElement("div");
       rbtDiv.style.width = "42px";
@@ -126,22 +109,16 @@ export function renderGanttChart(result, options = {}, ganttChart) {
 
       if (entry.label === "i") {
         rbtDiv.textContent = "";
-        btDiv.textContent = "1"; // Idle time
+        btDiv.textContent = (
+          entry.burstUsed ?? entry.end - entry.start
+        ).toString();
+        // idle burst (usually 1)
       } else {
         rbtDiv.textContent = entry.rbt === 0 ? "" : entry.rbt ?? "";
-
-        if (appearedProcesses.has(entry.label)) {
-          // Process already appeared before - show remaining burst time from rbtMap
-          btDiv.textContent = rbtMap[entry.label];
-          // Update rbtMap with latest rbt for next appearance
-          rbtMap[entry.label] = entry.rbt;
-        } else {
-          // First appearance - show original burst time
-          btDiv.textContent = originalBurstMap[entry.label] ?? "";
-          appearedProcesses.add(entry.label);
-          // Initialize rbtMap for the process with its current rbt
-          rbtMap[entry.label] = entry.rbt;
-        }
+        btDiv.textContent = (
+          entry.burstUsed ?? entry.end - entry.start
+        ).toString();
+        // Actual burst used per Gantt slice
       }
 
       rbtHeader.appendChild(rbtDiv);
@@ -171,90 +148,119 @@ export function renderGanttChart(result, options = {}, ganttChart) {
   console.table(ganttChart);
   renderQueueTimeline(result, ganttChart, q, algorithm);
 }
-function renderQueueTimeline(result, ganttChart, q, algorithm) {
-  if (!q) return;
-  const originalBurstMap = new Map();
 
-  ganttChart.forEach((proc) => {
-    originalBurstMap.set(proc.label, proc.rbt);
+function renderQueueTimeline(result, ganttChart, q, algorithm) {
+  if (!q || !Array.isArray(ganttChart)) return;
+
+  // Create deep copy to avoid mutating original data
+  const gantt = ganttChart.map((entry) => ({ ...entry }));
+
+  // Maps to store original burst times and actual durations
+  const originalBurstMap = new Map();
+  const bmap = new Map();
+
+  gantt.forEach((entry) => {
+    if (entry.label && entry.rbt != null) {
+      originalBurstMap.set(entry.label, entry.rbt);
+      bmap.set(entry.label, entry.end - entry.start);
+    }
+
+    // Normalize and merge 'arrived' and 'queue'
+    const arrived = Array.isArray(entry.arrived) ? entry.arrived : [];
+    const queue = Array.isArray(entry.queue) ? entry.queue : [];
+
+    entry.processes = [
+      ...arrived.map((p) => ({ ...normalizeProc(p), type: "arrived" })),
+      ...queue.map((p) => ({ ...normalizeProc(p), type: "queue" })),
+    ];
   });
 
-  for (let i = 0; i < ganttChart.length - 1; i++) {
-    ganttChart[i].nextLabel = ganttChart[i + 1]?.label || null;
+  // Assign next label to each entry
+  for (let i = 0; i < gantt.length - 1; i++) {
+    gantt[i].nextLabel = gantt[i + 1]?.label || null;
   }
-  ganttChart[ganttChart.length - 1].nextLabel = null;
+  gantt[gantt.length - 1].nextLabel = null;
 
-  q.innerHTML = ""; // Clear previous timeline
-  // 2. Optional helper to decide if a process should be slashed
+  // Clear existing content
+  q.innerHTML = "";
+
+  function normalizeProc(p) {
+    if (p == null) return {};
+    if (typeof p === "object") {
+      return {
+        process: p.process || p.label || "",
+        arrival: p.arrival ?? 0,
+        priority: p.priority ?? null,
+        rbt: p.rbt ?? (typeof p.burst === "number" ? p.burst : null), // fallback
+      };
+    }
+    return { process: p, arrival: 0, priority: null, rbt: null };
+  }
+
   function shouldBeSlashed(entry, name, algorithm, bt) {
     const group1 = ["SRTF", "RR", "PP"];
     const group2 = ["FCFS", "SJF", "NPP"];
 
+    const original = originalBurstMap.get(name);
+    const duration = bmap.get(name);
+
+    // Debug info
+    console.log("Check Slash =>", {
+      entryLabel: entry.label,
+      nextLabel: entry.nextLabel,
+      name,
+      original,
+      bt,
+      duration,
+    });
+
     if (group1.includes(algorithm)) {
-      return (
-        entry.nextLabel === name &&
-        originalBurstMap.get(name) === 0 &&
-        bt === originalBurstMap.get(name)
-      );
+      return entry.nextLabel === name && original === 0 && bt === duration;
     } else if (group2.includes(algorithm)) {
       return entry.nextLabel === name;
     }
+
     return false;
   }
 
-  // 3. Render Gantt chart
-  ganttChart.forEach((entry, i) => {
-    // Sort Round Robin queue by arrival time if needed
-    if (algorithm === "RR" && Array.isArray(entry.queue)) {
-      entry.queue.sort((a, b) => {
-        const aArrival = typeof a === "object" ? a.arrival || 0 : 0;
-        const bArrival = typeof b === "object" ? b.arrival || 0 : 0;
-        return aArrival - bArrival;
-      });
+  gantt.forEach((entry) => {
+    // Sort for RR if needed
+    if (algorithm === "RR" && Array.isArray(entry.processes)) {
+      entry.processes.sort((a, b) => (a.arrival || 0) - (b.arrival || 0));
     }
 
-    // Create queue container for this time slot
     const queueDiv = document.createElement("div");
     queueDiv.classList.add("gap-2", "tracking-tighter");
+
     queueDiv.style.width = "42px";
     queueDiv.style.minWidth = "42px";
     queueDiv.style.display = "flex";
     queueDiv.style.flexDirection = "column";
 
-    // 4. Handle 'arrived' queue if present
-    if (Array.isArray(entry.arrived)) {
-      entry.arrived.forEach((proc) => {
+    if (Array.isArray(entry.processes)) {
+      entry.processes.forEach((proc) => {
         const span = document.createElement("span");
-        const name = typeof proc === "object" ? proc.process : proc;
-        const priority = typeof proc === "object" ? proc.priority : null;
-        if (shouldBeSlashed(entry, name, algorithm, proc.rbt)) {
-          span.classList.add("slashed");
-        }
+        const name = proc.process;
+        const priority = proc.priority;
+        const rbt = proc.rbt;
+
+        console.log("Proc in queue:", proc);
 
         span.textContent = priority != null ? `${name}(${priority})` : name;
-        queueDiv.appendChild(span);
-      });
-    }
 
-    // 5. Handle main queue display
-    if (Array.isArray(entry.queue)) {
-      entry.queue.forEach((proc) => {
-        const span = document.createElement("span");
-        const name = typeof proc === "object" ? proc.process : proc;
-        const priority = typeof proc === "object" ? proc.priority : null;
-
-        // Set text like "P1(2)" if priority is defined
-        span.textContent = priority != null ? `${name}(${priority})` : name;
-
-        if (shouldBeSlashed(entry, name, algorithm, entry.rbt)) {
-          span.classList.add("slashed");
+        try {
+          if (shouldBeSlashed(entry, name, algorithm, rbt)) {
+            span.classList.add("slashed");
+          }
+        } catch (e) {
+          console.warn("Error checking slashed for", name, e);
         }
 
         queueDiv.appendChild(span);
       });
     }
 
-    q.appendChild(queueDiv); // append to outer container (assumed to exist)
+    q.appendChild(queueDiv);
   });
 }
 
